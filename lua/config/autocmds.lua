@@ -30,34 +30,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
   end,
 })
 
--- Show file location in winbar for all opened files (permanent display)
-vim.api.nvim_create_autocmd({"BufReadPost", "BufEnter", "BufNewFile"}, {
-  pattern = "*",
-  callback = function()
-    -- Only show for actual files, not special buffers
-    if vim.bo.buftype == "" and vim.fn.bufname() ~= "" then
-      -- Get relative path from current working directory
-      local filepath = vim.fn.expand('%:p')
-      local cwd = vim.fn.getcwd()
-      local relative_path = vim.fn.fnamemodify(filepath, ':~:.')
-      if relative_path == filepath then
-        -- If it's not relative to home or cwd, show just the filename
-        relative_path = vim.fn.fnamemodify(filepath, ':t')
-      end
-
-      -- Set up highlight group for winbar
-      vim.api.nvim_set_hl(0, 'WinBarFilePath', {
-        fg = '#61dafb', -- Light blue color
-        bg = '#1e1e2e', -- Dark background
-        bold = true
-      })
-
-      -- Set winbar with file location (right-aligned) - permanent display
-      local winbar_text = '%=%#WinBarFilePath# 📁 ' .. relative_path .. '%*'
-      vim.wo.winbar = winbar_text
-    end
-  end,
-})
+-- File location is now shown in bufferline custom area (right side of tabs)
 
 -- Note: This prevents Neo-tree from auto-opening when opening directories
 -- but Neo-tree remains available for manual use with <leader>e

@@ -1,3 +1,6 @@
+-- Global variable to track the last edited file
+local last_edited_file = nil
+
 return {
   "akinsho/bufferline.nvim",
   event = "VeryLazy",
@@ -20,7 +23,7 @@ return {
       -- stylua: ignore
       right_mouse_command = function(n) Snacks.bufdelete(n) end,
       diagnostics = "nvim_lsp",
-      always_show_bufferline = false,
+      always_show_bufferline = true,  -- Show bufferline even with 1 tab so file path is always visible
       diagnostics_indicator = function(_, _, diag)
         local icons = LazyVim.config.icons.diagnostics
         local ret = (diag.error and icons.Error .. diag.error .. " " or "")
@@ -42,6 +45,48 @@ return {
       get_element_icon = function(opts)
         return LazyVim.config.icons.ft[opts.filetype]
       end,
+      -- Add file path to the right side of bufferline (inside options)
+      custom_areas = {
+        right = function()
+          local result = {}
+          local filepath = vim.fn.expand('%:p')
+          local buftype = vim.bo.buftype
+
+          -- Show file path for regular files
+          if filepath ~= "" and buftype == "" then
+            -- Update last edited file
+            last_edited_file = filepath
+
+            local cwd = vim.fn.getcwd()
+            local relative_path = vim.fn.fnamemodify(filepath, ':~:.')
+            if relative_path == filepath then
+              relative_path = vim.fn.fnamemodify(filepath, ':t')
+            end
+
+            table.insert(result, {
+              text = " 📁 " .. relative_path .. " ",
+              fg = "#61dafb",
+              bg = "#1e1e2e",
+              bold = true
+            })
+          -- Show last edited file path for terminal buffers
+          elseif buftype == "terminal" and last_edited_file then
+            local cwd = vim.fn.getcwd()
+            local relative_path = vim.fn.fnamemodify(last_edited_file, ':~:.')
+            if relative_path == last_edited_file then
+              relative_path = vim.fn.fnamemodify(last_edited_file, ':t')
+            end
+
+            table.insert(result, {
+              text = " 📁 " .. relative_path .. " ",
+              fg = "#61dafb",
+              bg = "#1e1e2e",
+              bold = true
+            })
+          end
+          return result
+        end,
+      },
     },
   },
   config = function(_, opts)
