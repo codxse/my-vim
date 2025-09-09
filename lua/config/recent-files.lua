@@ -45,7 +45,7 @@ function M.show_recent_files()
   end
 
   table.insert(lines, "")
-  table.insert(lines, "Navigate with j/k, press Enter to open, q to close")
+  table.insert(lines, "Navigate with j/k, press Enter to open, s to search, q to close")
 
   -- Set the content
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -53,9 +53,9 @@ function M.show_recent_files()
   -- Set buffer name
   vim.api.nvim_buf_set_name(buf, "Recent Files")
 
-  -- Create a small window
-  local width = 60
-  local height = #lines
+  -- Create a larger window
+  local width = 80  -- Increased from 60
+  local height = #lines + 2  -- Add some padding
   local row = math.floor((vim.o.lines - height) / 2)
   local col = math.floor((vim.o.columns - width) / 2)
 
@@ -176,6 +176,20 @@ function M.show_recent_files()
     noremap = true,
     silent = true,
     callback = close_window
+  })
+
+  -- Map s to search files in current directory
+  vim.api.nvim_buf_set_keymap(buf, 'n', 's', '', {
+    noremap = true,
+    silent = true,
+    callback = function()
+      close_window()
+      -- Trigger LazyVim's default file search (same as <leader><leader>)
+      -- This works regardless of whether Telescope or fzf-lua is used
+      local cwd = vim.fn.getcwd()
+      vim.api.nvim_set_current_dir(cwd)  -- Set cwd for the search
+      vim.cmd('lua require("lazyvim.util").pick("files")()')
+    end
   })
 
   -- Auto-close on buffer leave

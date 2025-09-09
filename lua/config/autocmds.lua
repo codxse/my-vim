@@ -32,5 +32,39 @@ vim.api.nvim_create_autocmd("VimEnter", {
 
 -- File location is now shown in bufferline custom area (right side of tabs)
 
+-- Ensure files opened from Telescope/search replace blank buffers
+vim.api.nvim_create_autocmd("BufReadPost", {
+  pattern = "*",
+  callback = function()
+    -- Only process if current buffer is a real file (not special buffers)
+    if vim.bo.buftype ~= "" then
+      return
+    end
+
+    local current_buf = vim.api.nvim_get_current_buf()
+    local current_name = vim.api.nvim_buf_get_name(current_buf)
+
+    -- Only process if this is a real file (not empty, not directory)
+    if current_name == "" or current_name == "." then
+      return
+    end
+
+    -- Find and delete any directory/blank buffers
+    local bufs = vim.api.nvim_list_bufs()
+    for _, buf in ipairs(bufs) do
+      if buf ~= current_buf then
+        local buf_name = vim.api.nvim_buf_get_name(buf)
+        local buf_type = vim.api.nvim_buf_get_option(buf, 'buftype')
+
+        -- Delete directory buffers or empty buffers that are not the current file
+        if buf_type == "" and (buf_name == "." or buf_name == vim.fn.getcwd() or buf_name == "") then
+          vim.api.nvim_buf_delete(buf, { force = true })
+          break  -- Only delete one at a time to avoid issues
+        end
+      end
+    end
+  end,
+})
+
 -- Note: This prevents Neo-tree from auto-opening when opening directories
 -- but Neo-tree remains available for manual use with <leader>e
