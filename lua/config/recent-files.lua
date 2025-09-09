@@ -98,6 +98,17 @@ function M.show_recent_files()
     local index = get_file_index_from_line()
     if index and recent_files[index] then
       close_window()
+
+      -- Get the current buffer (should be the directory buffer)
+      local current_buf = vim.api.nvim_get_current_buf()
+      local buf_name = vim.api.nvim_buf_get_name(current_buf)
+
+      -- If this is a directory buffer, delete it before opening the new file
+      if buf_name == "." or buf_name == vim.fn.getcwd() then
+        vim.api.nvim_buf_delete(current_buf, { force = true })
+      end
+
+      -- Open the selected file
       vim.cmd('edit ' .. vim.fn.fnameescape(recent_files[index]))
     end
   end
@@ -130,13 +141,24 @@ function M.show_recent_files()
     callback = restrict_cursor
   })
 
-  -- Map number keys to open files
-  for i = 1, #recent_files do
+  -- Map number keys to open files (support up to 4)
+  for i = 1, math.min(#recent_files, 4) do
     vim.api.nvim_buf_set_keymap(buf, 'n', tostring(i), '', {
       noremap = true,
       silent = true,
       callback = function()
         close_window()
+
+        -- Get the current buffer (should be the directory buffer)
+        local current_buf = vim.api.nvim_get_current_buf()
+        local buf_name = vim.api.nvim_buf_get_name(current_buf)
+
+        -- If this is a directory buffer, delete it before opening the new file
+        if buf_name == "." or buf_name == vim.fn.getcwd() then
+          vim.api.nvim_buf_delete(current_buf, { force = true })
+        end
+
+        -- Open the selected file
         vim.cmd('edit ' .. vim.fn.fnameescape(recent_files[i]))
       end
     })

@@ -4,5 +4,5 @@
 
 -- Show recent files
 vim.keymap.set("n", "<leader>r", function()
-  require("plugins.recent-files").show_recent_files()
+  require("config.recent-files").show_recent_files()
 end, { desc = "Show Recent Files" })

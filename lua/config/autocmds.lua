@@ -23,7 +23,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
         local buf = vim.api.nvim_get_current_buf()
         if vim.bo[buf].buftype == "" and (vim.fn.bufname(buf) == "" or vim.fn.bufname(buf) == ".") then
           -- This is an empty buffer or directory buffer, show recent files
-          require("plugins.recent-files").show_recent_files()
+          require("config.recent-files").show_recent_files()
         end
       end
     end)
