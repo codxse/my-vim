@@ -66,5 +66,74 @@ vim.api.nvim_create_autocmd("BufReadPost", {
   end,
 })
 
+-- Global variable to track the last real file (not Neo-tree buffers)
+local last_real_file = nil
+
+-- Track when we switch to a real file
+vim.api.nvim_create_autocmd({"BufEnter", "BufReadPost"}, {
+  callback = function()
+    local bufname = vim.api.nvim_buf_get_name(0)
+    local buftype = vim.bo.buftype
+
+    -- Only track real files, not special buffers
+    if buftype == "" and bufname ~= "" and not bufname:match("neo%-tree") then
+      local previous_file = last_real_file
+      last_real_file = bufname
+
+      -- If Neo-tree is already open and we switched files, update focus
+      if previous_file ~= last_real_file then
+        -- Check if Neo-tree window exists
+        for _, win in ipairs(vim.api.nvim_list_wins()) do
+          local buf = vim.api.nvim_win_get_buf(win)
+          if vim.api.nvim_buf_get_option(buf, 'filetype') == 'neo-tree' then
+            -- Neo-tree is open, update focus to new file
+            vim.defer_fn(function()
+              if vim.fn.filereadable(last_real_file) == 1 then
+                pcall(function()
+                  vim.cmd("Neotree reveal " .. vim.fn.fnameescape(last_real_file))
+                end)
+              end
+            end, 100)
+            break
+          end
+        end
+      end
+    end
+  end,
+})
+
+-- Auto-focus Neo-tree on current file when sidebar opens
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "neo-tree",
+  callback = function()
+    -- Wait a bit for Neo-tree to fully load
+    vim.defer_fn(function()
+      -- Use the tracked real file instead of current buffer
+      local current_file = last_real_file
+      print("DEBUG: Neo-tree opened, tracked file:", current_file)
+
+      if current_file and current_file ~= "" and vim.fn.filereadable(current_file) == 1 then
+        print("DEBUG: File exists, attempting to reveal:", current_file)
+
+        -- Try the simple reveal command first
+        pcall(function()
+          vim.cmd("Neotree reveal " .. vim.fn.fnameescape(current_file))
+          print("DEBUG: Reveal command executed")
+        end)
+
+        -- Alternative: Try focus command
+        vim.defer_fn(function()
+          pcall(function()
+            vim.cmd("Neotree focus")
+            print("DEBUG: Focus command executed")
+          end)
+        end, 100)
+      else
+        print("DEBUG: No valid file to reveal")
+      end
+    end, 300)  -- Increased delay
+  end,
+})
+
 -- Note: This prevents Neo-tree from auto-opening when opening directories
 -- but Neo-tree remains available for manual use with <leader>e
